@@ -1,34 +1,78 @@
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import GaussianNB
-from sklearn import metrics
+import csv
+import random
+import math
 
-df = pd.read_csv("pima_indian.csv")
+def load_csv(filename):
+    with open(filename, "r") as file:
+        lines = csv.reader(file)
+        dataset = [list(map(float, row)) for row in lines]
+    return dataset
 
-feature_col_names = ['num_preg', 'glucose_conc', 'diastolic_bp', 'thickness', 'insulin', 'bmi', 'diab_pred', 'age']
-predicted_class_names = ['diabetes']
+def split_dataset(dataset, split_ratio):
+    train_size = int(len(dataset) * split_ratio)
+    train_set = random.sample(dataset, train_size)
+    test_set = [row for row in dataset if row not in train_set]
+    return train_set, test_set
 
-X = df[feature_col_names].values
-y = df[predicted_class_names].values
+def separate_by_class(dataset):
+    separated = {}
+    for row in dataset:
+        class_value = row[-1]
+        if class_value not in separated:
+            separated[class_value] = []
+        separated[class_value].append(row)
+    return separated
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20)
+def summarize(dataset):
+    summaries = [(mean(col), stdev(col)) for col in zip(*dataset)]
+    return summaries[:-1]
 
-print('Total number of Training Data:', y_train.shape)
-print('Total number of Test Data:', y_test.shape)
+def mean(numbers):
+    return sum(numbers) / float(len(numbers))
 
-clf = GaussianNB()
-clf.fit(X_train, y_train)
+def stdev(numbers):
+    avg = mean(numbers)
+    variance = sum((x - avg) ** 2 for x in numbers) / float(len(numbers) - 1)
+    return math.sqrt(variance)
 
-predicted = clf.predict(X_test)
-predict_test_data = clf.predict([[6, 148, 72, 35, 0, 33.6, 0.627, 50]])
+def calculate_probability(x, mean, stdev):
+    exponent = math.exp(-((x - mean) ** 2 / (2 * stdev ** 2)))
+    return (1 / (math.sqrt(2 * math.pi) * stdev)) * exponent
 
-print('\nConfusion matrix:')
-print(metrics.confusion_matrix(y_test, predicted))
+def calculate_class_probabilities(summaries, input_vector):
+    probabilities = {}
+    for class_value, class_summaries in summaries.items():
+        probabilities[class_value] = 1
+        for i in range(len(class_summaries)):
+            mean, stdev = class_summaries[i]
+            x = input_vector[i]
+            probabilities[class_value] *= calculate_probability(x, mean, stdev)
+    return probabilities
 
-print('\nAccuracy of the classifier:', metrics.accuracy_score(y_test, predicted))
+def predict(summaries, input_vector):
+    probabilities = calculate_class_probabilities(summaries, input_vector)
+    return max(probabilities, key=probabilities.get)
 
-print('\nPrecision:', metrics.precision_score(y_test, predicted))
+def get_predictions(summaries, test_set):
+    return [predict(summaries, row) for row in test_set]
 
-print('\nRecall:', metrics.recall_score(y_test, predicted))
+def get_accuracy(test_set, predictions):
+    correct = sum(1 for i in range(len(test_set)) if test_set[i][-1] == predictions[i])
+    return (correct / float(len(test_set))) * 100.0
 
-print("\nPredicted Value for individual Test Data:", predict_test_data)
+def main():
+    filename = 'diabetes.csv'
+    split_ratio = 0.87
+    dataset = load_csv(filename)
+    training_set, test_set = split_dataset(dataset, split_ratio)
+    print(f'Split {len(dataset)} rows into training={len(training_set)} and testing={len(test_set)} rows')
+
+    separated = separate_by_class(training_set)
+    summaries = {class_value: summarize(rows) for class_value, rows in separated.items()}
+
+    predictions = get_predictions(summaries, test_set)
+    accuracy = get_accuracy(test_set, predictions)
+    print(f'Classification Accuracy: {accuracy:.2f}%')
+
+if __name__ == "__main__":
+    main()

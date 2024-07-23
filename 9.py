@@ -1,32 +1,60 @@
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from numpy.linalg import inv
+from ipywidgets import interact
+from bokeh.plotting import figure, show, output_notebook
+from bokeh.layouts import gridplot
+from bokeh.io import push_notebook
 
-def kernel(point, xmat, k):
-    weights = np.exp(np.sum((point - xmat)**2, axis=1) / (-2.0 * k**2))
-    return np.diag(weights)
 
-def local_weight_regression(xmat, ymat, k):
-    m = xmat.shape[0]
-    ypred = np.zeros(m)
-    for i in range(m):
-        weights = kernel(xmat[i], xmat, k)
-        W = inv(xmat.T @ weights @ xmat) @ (xmat.T @ weights @ ymat)
-        ypred[i] = xmat[i] @ W
-    return ypred
 
-data = sns.load_dataset("tips")
-X = np.hstack((np.ones((len(data), 1)), np.array(data.total_bill).reshape(-1, 1)))
-ytip = np.array(data.tip).reshape(-1, 1)
+def local_regression(x0, X, Y, tau):
+    # Add bias term
+    x0 = np.r_[1, x0]
+    X = np.c_[np.ones(len(X)), X]
+    # Fit model: normal equations with kernel
+    xw = X.T * radial_kernel(x0, X, tau)
+    beta = np.linalg.pinv(xw @ X) @ xw @ Y
+    # Predict value
+    return x0 @ beta
 
-k = 0.5
-ypred = local_weight_regression(X, ytip, k)
+def radial_kernel(x0, X, tau):
+    return np.exp(np.sum((X - x0) ** 2, axis=1) / (-2 * tau * tau))
 
-sorted_indices = X[:, 1].argsort()
-plt.scatter(data.total_bill, data.tip, color='green')
-plt.plot(X[sorted_indices, 1], ypred[sorted_indices], color='red', linewidth=2)
-plt.xlabel('Total Bill')
-plt.ylabel('Tip')
-plt.show()
+n = 1000
+# Generate dataset
+X = np.linspace(-3, 3, num=n)
+Y = np.log(np.abs(X ** 2 - 1) + .5)
+# Jitter X
+X += np.random.normal(scale=.1, size=n)
+
+def plot_lwr(tau):
+    # Prediction
+    domain = np.linspace(-3, 3, num=300)
+    prediction = [local_regression(x0, X, Y, tau) for x0 in domain]
+    plot = figure(width=400, height=400)
+    plot.title.text = 'tau=%g' % tau
+    plot.scatter(X, Y, alpha=.3)
+    plot.line(domain, prediction, line_width=2, color='red')
+    return plot
+
+# Initial plots
+p1 = plot_lwr(10.)
+p2 = plot_lwr(1.)
+p3 = plot_lwr(0.1)
+p4 = plot_lwr(0.01)
+
+show(gridplot([[p1, p2], [p3, p4]]))
+
+# Interactive update
+def interactive_update(tau):
+    prediction = [local_regression(x0, X, Y, tau) for x0 in domain]
+    model.data_source.data['y'] = prediction
+    push_notebook()
+
+domain = np.linspace(-3, 3, num=100)
+prediction = [local_regression(x0, X, Y, 1.) for x0 in domain]
+plot = figure()
+plot.scatter(X, Y, alpha=.3)
+model = plot.line(domain, prediction, line_width=2, color='red')
+
+handle = show(plot, notebook_handle=True)
+interact(interactive_update, tau=(0.01, 3., 0.01))

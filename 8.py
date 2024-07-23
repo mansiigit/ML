@@ -1,26 +1,43 @@
-from sklearn.model_selection import train_test_split
+from sklearn.datasets import load_iris
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn import datasets
+from sklearn.model_selection import train_test_split
+import numpy as np
 
-iris=datasets.load_iris()
+# Load iris dataset
+iris = load_iris()
 
-x = iris.data
-y = iris.target
+# Display target names
+print("\nIRIS FEATURES \TARGET NAMES: \n", iris.target_names)
+for i, name in enumerate(iris.target_names):
+    print(f"\n[{i}]:[{name}]")
 
-print ('sepal-length', 'sepal-width', 'petal-length', 'petal-width')
-print(x)
-print('class: 0-Iris-Setosa, 1- Iris-Versicolour, 2- Iris-Virginica')
-print(y)
+# Display iris data
+print("\nIRIS DATA :\n", iris.data)
 
-x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.3)
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(iris.data, iris.target, random_state=0)
 
-classifier = KNeighborsClassifier(n_neighbors=5)
-classifier.fit(x_train, y_train)
+# Display splits
+print("\nX TRAIN \n", X_train)
+print("\nX TEST \n", X_test)
+print("\nY TRAIN \n", y_train)
+print("\nY TEST \n", y_test)
 
-y_pred=classifier.predict(x_test)
+# Train the k-NN classifier
+kn = KNeighborsClassifier(n_neighbors=1)
+kn.fit(X_train, y_train)
 
-print('Confusion Matrix')
-print(confusion_matrix(y_test,y_pred))
-print('Accuracy Metrics')
-print(classification_report(y_test,y_pred)) 
+# Predict for a new sample
+x_new = np.array([[5, 2.9, 1, 0.2]])
+prediction = kn.predict(x_new)
+print("\nXNEW \n", x_new)
+print(f"\nPredicted target value: {prediction}")
+print(f"\nPredicted feature name: {iris.target_names[prediction][0]}")
+
+# Predict and compare for the test set
+for x, actual in zip(X_test, y_test):
+    prediction = kn.predict([x])
+    print(f"\nActual:[{actual}][{iris.target_names[actual]}], Predicted:{prediction[0]}[{iris.target_names[prediction][0]}]")
+
+# Display test score
+print(f"\nTEST SCORE[ACCURACY]: {kn.score(X_test, y_test):.2f}\n")

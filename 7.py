@@ -7,12 +7,10 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
 
-# Load data
 iris = datasets.load_iris()
 X = pd.DataFrame(iris.data, columns=['Sepal_Length','Sepal_Width','Petal_Length','Petal_Width'])
 y = pd.DataFrame(iris.target, columns=['Targets'])
 
-# KMeans
 kmeans = KMeans(n_clusters=3)
 kmeans_labels = kmeans.fit_predict(X)
 colormap = np.array(['red', 'lime', 'black'])
@@ -33,7 +31,6 @@ plt.ylabel('Petal Width')
 print('K-Means Accuracy Score:', metrics.accuracy_score(y, kmeans_labels))
 print('K-Means Confusion Matrix:\n', metrics.confusion_matrix(y, kmeans_labels))
 
-# Gaussian Mixture Model
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 gmm = GaussianMixture(n_components=3)

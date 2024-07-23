@@ -1,25 +1,23 @@
 import matplotlib.pyplot as plt
 from sklearn import datasets
 from sklearn.cluster import KMeans
-import sklearn.metrics as sm
+from sklearn.mixture import GaussianMixture
+from sklearn import metrics
+from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
 
+# Load data
 iris = datasets.load_iris()
+X = pd.DataFrame(iris.data, columns=['Sepal_Length','Sepal_Width','Petal_Length','Petal_Width'])
+y = pd.DataFrame(iris.target, columns=['Targets'])
 
-X = pd.DataFrame(iris.data)
-X.columns = ['Sepal_Length','Sepal_Width','Petal_Length','Petal_Width']
-
-y = pd.DataFrame(iris.target)
-y.columns = ['Targets']
-
-model = KMeans(n_clusters=3)
-model.fit(X)
-
+# KMeans
+kmeans = KMeans(n_clusters=3)
+kmeans_labels = kmeans.fit_predict(X)
+colormap = np.array(['red', 'lime', 'black'])
 
 plt.figure(figsize=(14,7))
-
-colormap = np.array(['red', 'lime', 'black'])
 
 plt.subplot(1, 2, 1)
 plt.scatter(X.Petal_Length, X.Petal_Width, c=colormap[y.Targets], s=40)
@@ -28,33 +26,27 @@ plt.xlabel('Petal Length')
 plt.ylabel('Petal Width')
 
 plt.subplot(1, 2, 2)
-plt.scatter(X.Petal_Length, X.Petal_Width, c=colormap[model.labels_], s=40)
-plt.title('K Mean Classification')
+plt.scatter(X.Petal_Length, X.Petal_Width, c=colormap[kmeans_labels], s=40)
+plt.title('K-Means Classification')
 plt.xlabel('Petal Length')
 plt.ylabel('Petal Width')
-print('The accuracy score of K-Mean: ',sm.accuracy_score(y, model.labels_))
-print('The Confusion matrixof K-Mean: ',sm.confusion_matrix(y, model.labels_))
+print('K-Means Accuracy Score:', metrics.accuracy_score(y, kmeans_labels))
+print('K-Means Confusion Matrix:\n', metrics.confusion_matrix(y, kmeans_labels))
 
-
-from sklearn import preprocessing
-scaler = preprocessing.StandardScaler()
-scaler.fit(X)
-xsa = scaler.transform(X)
-xs = pd.DataFrame(xsa, columns = X.columns)
-
-
-from sklearn.mixture import GaussianMixture
+# Gaussian Mixture Model
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
 gmm = GaussianMixture(n_components=3)
-gmm.fit(xs)
-
-y_gmm = gmm.predict(xs)
-
+gmm_labels = gmm.fit_predict(X_scaled)
 
 plt.subplot(2, 2, 3)
-plt.scatter(X.Petal_Length, X.Petal_Width, c=colormap[y_gmm], s=40)
+plt.scatter(X.Petal_Length, X.Petal_Width, c=colormap[gmm_labels], s=40)
 plt.title('GMM Classification')
 plt.xlabel('Petal Length')
 plt.ylabel('Petal Width')
 
-print('The accuracy score of EM: ',sm.accuracy_score(y, y_gmm))
-print('The Confusion matrix of EM: ',sm.confusion_matrix(y, y_gmm))
+print('GMM Accuracy Score:', metrics.accuracy_score(y, gmm_labels))
+print('GMM Confusion Matrix:\n', metrics.confusion_matrix(y, gmm_labels))
+
+plt.tight_layout()
+plt.show()

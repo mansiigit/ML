@@ -7,27 +7,27 @@ from bokeh.io import push_notebook
 
 
 def local_regression(x0, X, Y, tau):
-    # Add bias term
+
     x0 = np.r_[1, x0]
     X = np.c_[np.ones(len(X)), X]
-    # Fit model: normal equations with kernel
+  
     xw = X.T * radial_kernel(x0, X, tau)
     beta = np.linalg.pinv(xw @ X) @ xw @ Y
-    # Predict value
+
     return x0 @ beta
 
 def radial_kernel(x0, X, tau):
     return np.exp(np.sum((X - x0) ** 2, axis=1) / (-2 * tau * tau))
 
 n = 1000
-# Generate dataset
+
 X = np.linspace(-3, 3, num=n)
 Y = np.log(np.abs(X ** 2 - 1) + .5)
 # Jitter X
 X += np.random.normal(scale=.1, size=n)
 
 def plot_lwr(tau):
-    # Prediction
+ 
     domain = np.linspace(-3, 3, num=300)
     prediction = [local_regression(x0, X, Y, tau) for x0 in domain]
     plot = figure(width=400, height=400)
@@ -36,7 +36,7 @@ def plot_lwr(tau):
     plot.line(domain, prediction, line_width=2, color='red')
     return plot
 
-# Initial plots
+
 p1 = plot_lwr(10.)
 p2 = plot_lwr(1.)
 p3 = plot_lwr(0.1)
@@ -44,7 +44,7 @@ p4 = plot_lwr(0.01)
 
 show(gridplot([[p1, p2], [p3, p4]]))
 
-# Interactive update
+
 def interactive_update(tau):
     prediction = [local_regression(x0, X, Y, tau) for x0 in domain]
     model.data_source.data['y'] = prediction

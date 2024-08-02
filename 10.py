@@ -1,4 +1,4 @@
-
+#Program: Implement and demonstrate the working of SVM algorithm for classification.x
 from sklearn import datasets
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split

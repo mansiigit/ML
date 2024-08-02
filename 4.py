@@ -1,3 +1,5 @@
+#Program: Build an Artificial Neural Network by implementing the Backpropagation algorithm and test the same using appropriate data sets.
+
 import numpy as np
 
 X = np.array(([2, 9], [1, 5], [3, 6]), dtype=float)

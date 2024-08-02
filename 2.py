@@ -1,3 +1,5 @@
+#Program: For a given set of training data examples stored in a .CSV file, implement anddemonstrate the Candidate-Elimination algorithm to output a description of the set of all hypotheses consistent with the training examples.
+
 import pandas as pd
 
 data = pd.read_csv('enjoysport.csv')
